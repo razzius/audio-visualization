@@ -1,11 +1,11 @@
-var context = null
-var canvasWidth = window.innerWidth
-var canvasHeight = window.innerHeight
-var dataLength = 100
-var analyserNode = null
-var frequencyToggle = true
-var hueMultiplier = 1.8
-var alpha = 0.2
+let context = null
+let analyserNode = null
+const canvasWidth = window.innerWidth
+const canvasHeight = window.innerHeight
+const dataLength = 100
+const frequencyToggle = true
+const hueMultiplier = 1.8
+const alpha = 0.2
 
 
 function range(length) {
@@ -18,7 +18,7 @@ function zeros(length) {
 }
 
 
-var bar_width = Math.round(canvasWidth / (dataLength - 1))
+var BAR_WIDTH = Math.round(canvasWidth / (dataLength - 1))
 var VERTICAL_OFFSET = 8
 
 var audioData = range(dataLength).map(() => zeros(64))
@@ -34,6 +34,12 @@ function drawShape(context, points) {
   context.fill()
 }
 
+// function translate(x, y) {
+//   ctxBuffer.clearRect(0,0,canvasBuffer.width,canvasBuffer.height); //clear buffer
+//   ctxBuffer.drawImage(canvasDisplay,0,0); //store display data in buffer
+//   ctxDisplay.clearRect(0,0,canvasDisplay.width,canvasDisplay.height); //clear display
+//   ctxDisplay.drawImage(canvasBuffer,x,y); //copy buffer to display
+// }
 
 function updateAnalysers() {
   var freqByteData = new Uint8Array(64)
@@ -44,33 +50,32 @@ function updateAnalysers() {
     analyserNode.getByteTimeDomainData(freqByteData)
   }
 
-  context.clearRect(0, 0, canvasWidth, canvasHeight)
+  context.globalCompositeOperation = "copy";
+  context.drawImage(context.canvas,BAR_WIDTH, 0);
+  // reset back to normal for subsequent operations.
+  context.globalCompositeOperation = "source-over"
+  // context.clearRect(0, 0, canvasWidth, canvasHeight)
+  const newer = audioData[0]
+  const older = audioData[1]
 
-  range(audioData.length).forEach(function(index) {
-    var i = audioData.length - index - 1
-    if (i == audioData.length - 1) return
+  range(newer.length).forEach(j => {
+    const baseHeight = canvasHeight - 64 * VERTICAL_OFFSET
+    const prevValue = older[j]
+    const value = newer[j]
 
-    let newer = audioData[i]
-    let older = audioData[i + 1]
+    const xLeft = 50 + j * 2
 
-    range(newer.length).forEach(function(j) {
-      var baseHeight = canvasHeight - 64 * VERTICAL_OFFSET
-      var prevValue = older[j]
-      var value = newer[j]
+    const xRight = xLeft + BAR_WIDTH
+    const yBase = baseHeight + j * VERTICAL_OFFSET
 
-      var xLeft = i * bar_width + j * 2
-      var xRight = xLeft + bar_width
-      var yBase = baseHeight + j * VERTICAL_OFFSET
+    const bottomLeftPoint = [xLeft, yBase]
+    const topLeftPoint = [xLeft, yBase - value]
+    const topRightPoint = [xRight, yBase - prevValue]
+    const bottomRightPoint = [xRight, yBase]
+    const shape = [bottomLeftPoint, topLeftPoint, topRightPoint, bottomRightPoint]
 
-      var bottomLeftPoint = [xLeft, yBase]
-      var topLeftPoint = [xLeft, yBase - value]
-      var topRightPoint = [xRight, yBase - prevValue]
-      var bottomRightPoint = [xRight, yBase]
-      var shape = [bottomLeftPoint, topLeftPoint, topRightPoint, bottomRightPoint]
-
-      context.fillStyle = `hsla(${value * hueMultiplier},100%,50%,${alpha})`
-      drawShape(context, shape)
-    })
+    context.fillStyle = `hsla(${value * hueMultiplier},100%,50%,${alpha})`
+    drawShape(context, shape)
   })
 
   range(audioData.length).forEach(function(i) {
@@ -135,7 +140,7 @@ function main() {
       audioData = audioData.slice(0, value)
     }
     historySize.innerText = value
-    bar_width = Math.round(canvasWidth / (audioData.length - 1))
+    BAR_WIDTH = Math.round(canvasWidth / (audioData.length - 1))
   }
 
   var hueInput = document.createElement('input')
