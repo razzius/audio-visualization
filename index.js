@@ -175,7 +175,7 @@ function main() {
   document.body.style.margin = '.3em 0 0 0'
 
   context = canvas.getContext('2d')
-  navigator.getUserMedia({audio: true}, gotStream, alert)
+  navigator.mediaDevices.getUserMedia({audio: true}).then(gotStream).catch(alert)
 }
 
 
